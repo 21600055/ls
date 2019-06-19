@@ -39,7 +39,7 @@ public class Main {
 		
 		if(!isExist)
 		{
-			System.out.println("파일이 없습니다.");
+			System.out.println("no file");
 		}
 		
 		File[] fileList = file.listFiles();
