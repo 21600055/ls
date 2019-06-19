@@ -7,14 +7,21 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.ArrayList;
 
 public class Main {
 	
 	String path;
-	String[] pathfile;
 	boolean help=false;
 	boolean reverse=false;
-	
+	boolean format=false;
+	boolean hidden=false;
+	boolean size=false;
+    ArrayList<String> pathfile=new ArrayList<String>();
+    
 	public static void main(String[] args) {
 		
 		Main main=new Main();
@@ -35,6 +42,12 @@ public class Main {
 			System.out.println("파일이 없습니다.");
 		}
 		
+		File[] fileList = file.listFiles();
+		for(File tFile:fileList)
+		{
+			pathfile.add(tFile.getName());
+		}
+			
 		if(parseOptions(options,args))
 		{
 			if(help)
@@ -44,20 +57,94 @@ public class Main {
 			}
 			if(reverse)
 			{
-				File[] fileList = file.listFiles();
-				 
+				Reverse reverse=new Reverse();
+				pathfile=reverse.run(pathfile);
+				Print pr=new Print();
+				pr.run(pathfile);
+				System.exit(0);
+			}
+			if(hidden)
+			{
+				ArrayList<String> temp=new ArrayList<String>();
+				for(File tFile : fileList)
+				{
+					if((tFile.isHidden())==true||(tFile.isHidden())==false)
+						temp.add(tFile.getName());
+				}
+				
+				pathfile=temp;
+			}
+			else
+			{
+				ArrayList<String> temp=new ArrayList<String>();
+				
+				for(File tFile:fileList)
+				{
+					if(tFile.isHidden()==false)
+					{
+						temp.add(tFile.getName());
+					}
+				}
+				
+				pathfile=temp;
+			}
+			if(size)
+			{
+				HashMap<Long,String> temp=new HashMap<Long,String>();
+				ArrayList<String> Temp=new ArrayList<String>();
+				
+				for(File tfile:fileList)
+				{
+					if(tfile.isHidden())
+					{
+						continue;
+					}
+					temp.put(tfile.length(),tfile.getName());
+				}
+				Map<Long,String> temp1=new TreeMap<Long,String>(temp);
+				
+				for(Long key:temp1.keySet())
+				{
+					String value=temp1.get(key)+" "+key.toString()+"bytes";
+					Temp.add(value);
+				}
+				pathfile=Temp;
+			}
+			if(format)
+			{
+				ArrayList<String> temp = new ArrayList<String>();
 		        for(File tFile : fileList)
 		        {
-		            System.out.print(tFile.getName());             
-		        }          
+		        	if(tFile.isDirectory())
+		        	{
+		        		temp.add(tFile.getName()+"/");	
+		        	}
+		        	else if(tFile.canExecute())
+		        	{
+		        		temp.add(tFile.getName()+"*");
+		        	}
+		        	else
+		        	{
+		        		temp.add(tFile.getName());
+		        	}
+		        } 
+		        pathfile=temp;
 			}
-			
-			File[] fileList = file.listFiles();
-			 
-	        for(File tFile : fileList)
-	        {
-	            System.out.print(tFile.getName());             
-	        }          
+			Print pr=new Print();
+			pr.run(pathfile);
+			System.exit(0);
+		}
+		else
+		{
+			for(File tFile:fileList)
+			{
+				if(tFile.isHidden())
+	        	{
+	        		continue;
+	        	}
+	            System.out.println(tFile.getName());
+				
+			}
 		}
 	}
 	
@@ -72,6 +159,9 @@ public class Main {
 
 			help = cmd.hasOption("h");
 			reverse=cmd.hasOption("r");
+			format=cmd.hasOption("F");
+			hidden=cmd.hasOption("a");
+			size=cmd.hasOption("ls");
 		} catch (Exception e) {
 			printHelp(options);
 			return false;
@@ -87,12 +177,22 @@ public class Main {
 		options.addOption(Option.builder("r").longOpt("reverse")
 			   .desc("reverse print")
 			   .build());
-
+		 
+		options.addOption(Option.builder("F").longOpt("format")
+				.desc("append")
+				.build());
+		
+		options.addOption(Option.builder("a").longOpt("hidden")
+				.desc("print Hidden")
+				.build());
+		
 		options.addOption(Option.builder("h").longOpt("help")
 		          .desc("Show a Help page")
 		          .argName("Help")
 		          .build());
-		
+		options.addOption(Option.builder("ls").longOpt("size")
+				.desc("print as size")
+				.build());
 
 		return options;
 	}
